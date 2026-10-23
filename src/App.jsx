@@ -21,7 +21,7 @@ export default function App() {
         {!usuario ? (
           <LoginRegistro onLogin={(u) => setUsuario(u)} />
         ) : usuario.rol === 'Arrendatario' ? (
-          <DashArrendatario usuario={usuario} />
+          <DashArrendatario usuario={usuario} sidebarAbierta={sidebarAbierta} />
         ) : usuario.rol === 'Jefe de Mantenimiento' || usuario.rol === 'Jefe Mantenimiento' || usuario.rol === 'Administrador' ? (
           <DashAdministrador usuario={usuario} sidebarAbierta={sidebarAbierta} />
         ) : (

@@ -4,16 +4,21 @@ import Boton from './Boton';
 export default function Header({ usuario, onLogout, onToggleSidebar }) {
   return (
     <Navbar bg="dark" variant="dark" className="px-3 border-bottom border-dark shadow-sm">
-      <Container fluid className="px-0">
+      <Container 
+        fluid 
+        className={`px-0 d-flex align-items-center ${!usuario ? 'justify-content-center' : 'justify-content-between'}`}
+      >
         <div className="d-flex align-items-center">
-          <button
-            type="button"
-            className="btn btn-dark text-white me-2 border-0 fs-4 py-0 px-2"
-            onClick={onToggleSidebar}
-            title="Alternar Menú"
-          >
-            ≡
-          </button>
+          {usuario && (
+            <button
+              type="button"
+              className="btn btn-dark text-white me-2 border-0 fs-4 py-0 px-2"
+              onClick={onToggleSidebar}
+              title="Alternar Menú"
+            >
+              ≡
+            </button>
+          )}
           <Navbar.Brand className="fw-bold fs-4 mb-0 me-0">
             Torre Central
           </Navbar.Brand>

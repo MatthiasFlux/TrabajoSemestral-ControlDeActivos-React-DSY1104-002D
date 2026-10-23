@@ -1,28 +1,72 @@
-import { useState } from 'react';
-import { Container, Card, Form, Table, ProgressBar, Row, Col, Alert } from 'react-bootstrap';
+import { useState, useEffect } from 'react';
+import { Container, Card, Form, Table, ProgressBar, Row, Col, Alert, Badge } from 'react-bootstrap';
+import Sidebar from '../components/Sidebar';
+import { solicitudesService } from '../services/solicitudesService';
 
 export default function DashAdministrador({ usuario, sidebarAbierta }) {
   const [alertaVisible, setAlertaVisible] = useState(true);
+  const [pestaña, setPestaña] = useState('gestion');
+  const [solicitudes, setSolicitudes] = useState([]);
+  const [tecnicoSeleccionado, setTecnicoSeleccionado] = useState({});
+
+  // Estados para Sección 2: Programar Mantenimiento Preventivo
+  const [equipo, setEquipo] = useState('ACT004 - Generador Eléctrico 1');
+  const [fechaProgramada, setFechaProgramada] = useState('');
+  const [tecnicoEncargado, setTecnicoEncargado] = useState('Miguel Silva');
+  const [mensajeCalendarizacion, setMensajeCalendarizacion] = useState(null);
+
+  // Cargar solicitudes compartidas
+  useEffect(() => {
+    setSolicitudes(solicitudesService.obtenerSolicitudes());
+  }, []);
+
+  // Manejar cambio de técnico por fila en la tabla
+  const handleCambioTecnico = (id, tecnico) => {
+    setTecnicoSeleccionado({ ...tecnicoSeleccionado, [id]: tecnico });
+  };
+
+  // Asignar técnico y generar OT
+  const handleGenerarOT = (id) => {
+    const tecnico = tecnicoSeleccionado[id] || "Miguel Silva (Técnico)";
+    const actualizadas = solicitudesService.generarOrdenTrabajo(id, tecnico);
+    setSolicitudes(actualizadas);
+  };
+
+  // Procesar la calendarización
+  const handleCalendarizar = (e) => {
+    e.preventDefault();
+
+    if (!fechaProgramada) {
+      setMensajeCalendarizacion({
+        tipo: 'danger',
+        texto: 'Por favor, seleccione una fecha programada.'
+      });
+      return;
+    }
+
+    setMensajeCalendarizacion({
+      tipo: 'success',
+      texto: `Mantenimiento preventivo para "${equipo}" asignado con éxito a ${tecnicoEncargado} para la fecha ${fechaProgramada}.`
+    });
+
+    setTimeout(() => {
+      setFechaProgramada('');
+      setMensajeCalendarizacion(null);
+    }, 4000);
+  };
 
   return (
     <div className="d-flex flex-fill overflow-hidden dashboard-layout">
-      
-      {/* SIDEBAR CON ANIMACION CSS */}
-      <aside className={`sidebar shadow-sm ${!sidebarAbierta ? 'cerrada' : ''}`}>
-        <div className="sidebar-title">MÓDULOS DEL SISTEMA</div>
-        <ul className="nav flex-column mb-auto">
-          <li className="nav-item">
-            <button className="sidebar-link active">
-              📋 Gestión y Programación
-            </button>
-          </li>
-        </ul>
-      </aside>
+      {/* Sidebar Reutilizable */}
+      <Sidebar 
+        usuario={usuario} 
+        sidebarAbierta={sidebarAbierta} 
+        pestaña={pestaña} 
+        setPestaña={setPestaña} 
+      />
 
-      {/* CONTENIDO */}
+      {/* CONTENIDO PRINCIPAL */}
       <main className="main-content bg-light p-4">
-        
-        {/* ALERTA */}
         {alertaVisible && (
           <Alert 
             variant="warning" 
@@ -41,68 +85,122 @@ export default function DashAdministrador({ usuario, sidebarAbierta }) {
             <p className="text-muted small">Evaluación de solicitudes, balance de carga y programación preventiva.</p>
           </div>
 
-          {/* 1 RECEPCION Y ASIGNACION */}
+          {/* 1. RECEPCIÓN Y ASIGNACIÓN DE SOLICITUDES */}
           <Card className="border-0 shadow-sm rounded-3 mb-4">
             <Card.Body className="p-4">
               <Card.Title className="fw-bold mb-4">1. Recepción y Asignación de Solicitudes (RF-03)</Card.Title>
               <Table responsive hover align="middle" className="border mb-0">
                 <thead className="table-dark">
                   <tr>
-                    <th className="fw-normal">Folio</th>
-                    <th className="fw-normal">Solicitante</th>
-                    <th className="fw-normal">Activo</th>
-                    <th className="fw-normal">Descripción</th>
-                    <th className="fw-normal">Prioridad</th>
-                    <th className="fw-normal">Asignar Técnico</th>
-                    <th className="fw-normal">Acción</th>
+                    <th>Folio</th>
+                    <th>Solicitante</th>
+                    <th>Activo</th>
+                    <th>Descripción</th>
+                    <th>Estado</th>
+                    <th>Asignar Técnico</th>
+                    <th>Acción</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td><strong>SOL-103</strong></td>
-                    <td>Empresa TechCorp</td>
-                    <td>Ascensor 1</td>
-                    <td>Ruidos extraños en el freno.</td>
-                    <td><span className="badge bg-danger rounded-pill px-2 py-1">Alta</span></td>
-                    <td>
-                      <Form.Select size="sm" className="w-auto">
-                        <option>Miguel Silva (Técnico)</option>
-                        <option>Juan Pérez (Técnico)</option>
-                      </Form.Select>
-                    </td>
-                    <td>
-                      <button className="btn btn-celeste btn-sm px-3">Generar OT</button>
-                    </td>
-                  </tr>
+                  {solicitudes.map((sol) => (
+                    <tr key={sol.id}>
+                      <td><strong>{sol.id}</strong></td>
+                      <td>{sol.solicitante}</td>
+                      <td>{sol.activo}</td>
+                      <td>{sol.descripcion}</td>
+                      <td>
+                        <Badge 
+                          bg={sol.estado === 'En ejecución' ? 'warning' : 'info'} 
+                          text={sol.estado === 'En ejecución' ? 'dark' : 'white'}
+                        >
+                          {sol.estado}
+                        </Badge>
+                      </td>
+                      <td>
+                        {sol.estado === 'En ejecución' ? (
+                          <span className="small fw-bold text-success">✓ {sol.tecnico}</span>
+                        ) : (
+                          <Form.Select 
+                            size="sm" 
+                            className="w-auto"
+                            onChange={(e) => handleCambioTecnico(sol.id, e.target.value)}
+                          >
+                            <option value="Miguel Silva (Técnico)">Miguel Silva (Técnico)</option>
+                            <option value="Juan Pérez (Técnico)">Juan Pérez (Técnico)</option>
+                          </Form.Select>
+                        )}
+                      </td>
+                      <td>
+                        {sol.estado !== 'En ejecución' && (
+                          <button 
+                            className="btn btn-celeste btn-sm px-3"
+                            onClick={() => handleGenerarOT(sol.id)}
+                          >
+                            Generar OT
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </Table>
             </Card.Body>
           </Card>
 
           <Row className="g-4">
-            {/* 2 ASIGNAR MANTENIMIENTO */}
+            {/* 2. PROGRAMAR MANTENIMIENTO PREVENTIVO */}
             <Col lg={6}>
               <Card className="border-0 shadow-sm rounded-3 h-100">
                 <Card.Body className="p-4">
                   <Card.Title className="fw-bold mb-4">2. Programar Mantenimiento Preventivo (RF-05)</Card.Title>
-                  <Form>
+                  
+                  {mensajeCalendarizacion && (
+                    <Alert 
+                      variant={mensajeCalendarizacion.tipo} 
+                      onClose={() => setMensajeCalendarizacion(null)} 
+                      dismissible
+                      className="py-2 mb-3 small"
+                    >
+                      {mensajeCalendarizacion.texto}
+                    </Alert>
+                  )}
+
+                  <Form onSubmit={handleCalendarizar}>
                     <Form.Group className="mb-3">
                       <Form.Label className="fw-bold small">Seleccionar Equipo</Form.Label>
-                      <Form.Select>
-                        <option>ACT004 - Generador Eléctrico 1</option>
+                      <Form.Select 
+                        value={equipo} 
+                        onChange={(e) => setEquipo(e.target.value)}
+                      >
+                        <option value="ACT004 - Generador Eléctrico 1">ACT004 - Generador Eléctrico 1</option>
+                        <option value="ACT001 - Ascensor Principal 1">ACT001 - Ascensor Principal 1</option>
+                        <option value="ACT003 - Climatización Central">ACT003 - Climatización Central</option>
+                        <option value="ACT005 - Bomba de Agua Subterráneo">ACT005 - Bomba de Agua Subterráneo</option>
                       </Form.Select>
                     </Form.Group>
+
                     <Form.Group className="mb-3">
                       <Form.Label className="fw-bold small">Fecha Programada</Form.Label>
-                      <Form.Control type="date" />
+                      <Form.Control 
+                        type="date" 
+                        value={fechaProgramada}
+                        onChange={(e) => setFechaProgramada(e.target.value)}
+                        required
+                      />
                     </Form.Group>
+
                     <Form.Group className="mb-4">
                       <Form.Label className="fw-bold small">Técnico Encargado</Form.Label>
-                      <Form.Select>
-                        <option>Miguel Silva</option>
+                      <Form.Select 
+                        value={tecnicoEncargado} 
+                        onChange={(e) => setTecnicoEncargado(e.target.value)}
+                      >
+                        <option value="Miguel Silva">Miguel Silva</option>
+                        <option value="Juan Pérez">Juan Pérez</option>
                       </Form.Select>
                     </Form.Group>
-                    <button type="button" className="btn btn-celeste w-100 py-2">
+
+                    <button type="submit" className="btn btn-celeste w-100 py-2 fw-bold">
                       Calendarizar Tarea
                     </button>
                   </Form>
@@ -110,7 +208,7 @@ export default function DashAdministrador({ usuario, sidebarAbierta }) {
               </Card>
             </Col>
 
-            {/* 3 CARGA DE TRABAJO */}
+            {/* 3. CARGA DE TRABAJO TÉCNICOS */}
             <Col lg={6}>
               <Card className="border-0 shadow-sm rounded-3 h-100">
                 <Card.Body className="p-4">

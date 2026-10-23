@@ -1,49 +1,25 @@
 import { useState } from 'react';
 import { Container, Card, Form, Table, Badge, Alert } from 'react-bootstrap';
-import Boton from '../components/Boton';
+import Sidebar from '../components/Sidebar';
+import { solicitudesService } from '../services/solicitudesService';
 
-export default function DashArrendatario({ usuario }) {
+export default function DashArrendatario({ usuario, sidebarAbierta }) {
   const [pestaña, setPestaña] = useState('solicitudes'); // 'crear' o 'solicitudes'
   const [activo, setActivo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [mensaje, setMensaje] = useState('');
 
-  const [solicitudes, setSolicitudes] = useState([
-    {
-      id: "SOL-102",
-      activo: "Ascensor 2 (Piso 1)",
-      fecha: "2026-03-10",
-      estado: "En ejecución",
-      tecnico: "Miguel Silva",
-      descripcion: "Ruidos al detenerse en piso 3"
-    },
-    {
-      id: "SOL-089",
-      activo: "Climatización Piso 8",
-      fecha: "2026-02-15",
-      estado: "Finalizada",
-      tecnico: "Miguel Silva",
-      descripcion: "Falla en termostato de la sala de reuniones"
-    }
-  ]);
+  const [solicitudes, setSolicitudes] = useState(solicitudesService.obtenerSolicitudes());
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const nuevaSolicitud = {
-      id: `SOL-${Math.floor(100 + Math.random() * 900)}`,
-      activo,
-      descripcion,
-      fecha: new Date().toISOString().split('T')[0],
-      estado: 'Reportada',
-      tecnico: 'Sin Asignar'
-    };
+    const nuevaSolicitud = solicitudesService.crearSolicitud(usuario?.nombre, activo, descripcion);
 
-    setSolicitudes([nuevaSolicitud, ...solicitudes]);
+    setSolicitudes(solicitudesService.obtenerSolicitudes());
     setMensaje(`Solicitud ingresada correctamente con el folio ${nuevaSolicitud.id}.`);
     setActivo('');
     setDescripcion('');
     
-    // Opcional: Redirigir a la vista de mis solicitudes tras enviar
     setTimeout(() => {
       setPestaña('solicitudes');
       setMensaje('');
@@ -51,43 +27,17 @@ export default function DashArrendatario({ usuario }) {
   };
 
   return (
-    <div className="d-flex flex-grow-1 bg-light">
-      {/* Sidebar Lateral */}
-      <aside
-        className="bg-dark text-white p-3"
-        style={{ width: '240px', minHeight: 'calc(100vh - 56px)' }}
-      >
-        <div className="d-grid gap-2">
-          <button
-            type="button"
-            className={`btn text-start fw-bold py-2 px-3 border-0 ${
-              pestaña === 'crear' ? 'btn-primary text-white' : 'btn-dark text-white-50'
-            }`}
-            onClick={() => {
-              setPestaña('crear');
-              setMensaje('');
-            }}
-          >
-            📝 Crear Solicitud
-          </button>
-
-          <button
-            type="button"
-            className={`btn text-start fw-bold py-2 px-3 border-0 ${
-              pestaña === 'solicitudes' ? 'btn-primary text-white' : 'btn-dark text-white-50'
-            }`}
-            onClick={() => {
-              setPestaña('solicitudes');
-              setMensaje('');
-            }}
-          >
-            🔍 Mis Solicitudes
-          </button>
-        </div>
-      </aside>
+    <div className="d-flex flex-fill overflow-hidden dashboard-layout">
+      {/* Componente Sidebar Reutilizable */}
+      <Sidebar 
+        usuario={usuario} 
+        sidebarAbierta={sidebarAbierta} 
+        pestaña={pestaña} 
+        setPestaña={setPestaña} 
+      />
 
       {/* Área Principal de Contenido */}
-      <main className="flex-grow-1 p-4">
+      <main className="main-content bg-light p-4">
         <Container fluid>
           {pestaña === 'crear' ? (
             /* Vista 1: Reportar Falla o Avería */
