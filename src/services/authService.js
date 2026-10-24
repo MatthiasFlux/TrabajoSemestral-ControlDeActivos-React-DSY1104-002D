@@ -1,4 +1,4 @@
-import { usuariosIniciales } from "../data/usuarios";
+import { usuariosIniciales } from "../data/usuarios.js";
 
 export const authService = {
   login: (correo, pass, usuarios = usuariosIniciales) => {
