@@ -6,9 +6,11 @@ module.exports = function (config) {
     frameworks: ['jasmine', 'webpack'],
     files: [
       { pattern: 'tests/**/*.spec.js', watched: false },
+      { pattern: 'tests/**/*.spec.jsx', watched: false },
     ],
     preprocessors: {
       'tests/**/*.spec.js': ['webpack'],
+      'tests/**/*.spec.jsx': ['webpack'],
     },
     webpack: {
       mode: 'development',
