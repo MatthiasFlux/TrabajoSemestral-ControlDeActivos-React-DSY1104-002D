@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
-// Vitest reemplaza Jasmine + Karma y utiliza jsdom para probar componentes React.
+// Configuarcion de Vitest
 export default defineConfig({
   plugins: [react()],
   test: {
