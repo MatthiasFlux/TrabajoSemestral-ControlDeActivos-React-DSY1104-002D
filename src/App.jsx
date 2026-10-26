@@ -3,6 +3,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import LoginRegistro from './pages/LoginRegistro';
 import DashArrendatario from './pages/DashArrendatario';
+import DashAdministrador from './pages/DashAdministrador';
 
 export default function App() {
   const [usuario, setUsuario] = useState(null);
@@ -20,7 +21,9 @@ export default function App() {
         {!usuario ? (
           <LoginRegistro onLogin={(u) => setUsuario(u)} />
         ) : usuario.rol === 'Arrendatario' ? (
-          <DashArrendatario usuario={usuario} />
+          <DashArrendatario usuario={usuario} sidebarAbierta={sidebarAbierta} />
+        ) : usuario.rol === 'Jefe de Mantenimiento' || usuario.rol === 'Jefe Mantenimiento' || usuario.rol === 'Administrador' ? (
+          <DashAdministrador usuario={usuario} sidebarAbierta={sidebarAbierta} />
         ) : (
           <div className="container py-5 text-center">
             <h3>Bienvenido, {usuario.nombre}</h3>
