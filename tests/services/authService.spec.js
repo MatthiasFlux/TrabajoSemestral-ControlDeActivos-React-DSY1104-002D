@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { authService } from '../../src/services/authService.js';
 
 describe('Torre Central - Autenticación', () => {
